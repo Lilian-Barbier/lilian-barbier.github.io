@@ -52,9 +52,6 @@ if (WebGL.isWebGLAvailable()) {
       // Appliquez la matrice de transformation mondiale pour obtenir les coordonnées mondiales
       const secondPointWorld = secondPointLocal.applyMatrix4(matrix);
 
-      console.log('Position mondiale du deuxième point :', secondPointWorld);
-
-
       lastPositions[3] = secondPointWorld.x;
       lastPositions[4] = secondPointWorld.y;
       lastPositions[5] = secondPointWorld.z;
@@ -75,6 +72,12 @@ if (WebGL.isWebGLAvailable()) {
     const line = new THREE.Line(lineGeometry, lineMaterial);
     scene.add(line);
     lines.push(line);
+
+    if (lines.length > 10000) {
+      const firstLine = lines.shift();
+      scene.remove(firstLine);
+    }
+
   }, 10);
 
   // Render loop
@@ -82,12 +85,20 @@ if (WebGL.isWebGLAvailable()) {
     requestAnimationFrame(animate);
 
     lines.forEach((line) => {
-      line.rotation.y += 0.01;
+      line.rotation.y += 0.007;
     });
 
     renderer.render(scene, camera);
   };
   animate();
+
+  function onResize() {
+    // camera.aspect = contenedor.clientWidth / contenedor.clientHeight;
+    // camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  window.addEventListener('resize', onResize);
 
 } else {
 
