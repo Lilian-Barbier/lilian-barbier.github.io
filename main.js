@@ -1,26 +1,97 @@
 import * as THREE from 'three';
+import WebGL from 'three/addons/capabilities/WebGL.js';
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+if (WebGL.isWebGLAvailable()) {
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+  // Initialize Three.js components
+  const scene = new THREE.Scene();
+  // const camera = new THREE.PerspectiveCamera(
+  //   75,
+  //   window.innerWidth / window.innerHeight,
+  //   0.1,
+  //   1000);
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 1000);
 
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
+  // Set up camera position
+  camera.position.z = 20;
+  camera.lookAt(0, 0, 0);
 
-camera.position.z = 5;
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
 
-function animate() {
-  requestAnimationFrame(animate);
+  // Create a material for the line
+  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
 
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
+  // Create a list to store lines
+  const lines = [];
+  let currentMouse = new THREE.Vector2();
 
-  renderer.render(scene, camera);
+  // Event listener to track mouse movement
+  document.addEventListener('mousemove', (event) => {
+    currentMouse = new THREE.Vector2();
+    currentMouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    currentMouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  });
+
+  // Create a timer to draw lines every x seconds
+  setInterval(() => {
+
+    if (lines.length > 0) {
+      const lastLine = lines[lines.length - 1];
+      const lastPositions = lastLine.geometry.attributes.position.array;
+
+      // Obtenez la matrice de transformation mondiale de la ligne
+      const matrix = lastLine.matrixWorld;
+
+      // Obtenez les coordonnées du deuxième point de la ligne dans le système local de la ligne
+      const secondPointLocal = new THREE.Vector3(lastPositions[3], lastPositions[4], lastPositions[5]);  // Remplacez les valeurs par les coordonnées réelles du deuxième point
+      // Par exemple, si le deuxième point est à (x, y, z), vous feriez :
+      // const secondPointLocal = new THREE.Vector3(x, y, z);
+
+      // Appliquez la matrice de transformation mondiale pour obtenir les coordonnées mondiales
+      const secondPointWorld = secondPointLocal.applyMatrix4(matrix);
+
+      console.log('Position mondiale du deuxième point :', secondPointWorld);
+
+
+      lastPositions[3] = secondPointWorld.x;
+      lastPositions[4] = secondPointWorld.y;
+      lastPositions[5] = secondPointWorld.z;
+
+      lastLine.geometry.attributes.position.needsUpdate = true;
+    }
+
+    const lineGeometry = new THREE.BufferGeometry();
+    const linePositions = new Float32Array(6);
+    linePositions[0] = currentMouse.x;
+    linePositions[1] = currentMouse.y;
+    linePositions[2] = 0;
+    linePositions[3] = currentMouse.x;
+    linePositions[4] = currentMouse.y;
+    linePositions[5] = 0;
+    lineGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+
+    const line = new THREE.Line(lineGeometry, lineMaterial);
+    scene.add(line);
+    lines.push(line);
+  }, 10);
+
+  // Render loop
+  const animate = () => {
+    requestAnimationFrame(animate);
+
+    lines.forEach((line) => {
+      line.rotation.y += 0.01;
+    });
+
+    renderer.render(scene, camera);
+  };
+  animate();
+
+} else {
+
+  const warning = WebGL.getWebGLErrorMessage();
+  document.getElementById('container').appendChild(warning);
+
 }
-
-animate();
