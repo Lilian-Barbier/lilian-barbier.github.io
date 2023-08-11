@@ -52,13 +52,10 @@ function AddFilmGrain() {
 
 if (WebGL.isWebGLAvailable()) {
 
+  let nextPageBool = false;
+
   // Initialize Three.js components
   const scene = new THREE.Scene();
-  // const camera = new THREE.PerspectiveCamera(
-  //   75,
-  //   window.innerWidth / window.innerHeight,
-  //   0.1,
-  //   1000);
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 1000);
 
   // Set up camera position
@@ -69,12 +66,8 @@ if (WebGL.isWebGLAvailable()) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // //Create composer for post-processing
-  // const composer = new EffectComposer(renderer);
-
-
   // Create a material for the line
-  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 200 });
 
   // Create a list to store lines
   const lines = [];
@@ -89,48 +82,49 @@ if (WebGL.isWebGLAvailable()) {
 
   // Create a timer to draw lines every x seconds
   setInterval(() => {
+    if (!nextPageBool) {
 
-    if (lines.length > 0) {
-      const lastLine = lines[lines.length - 1];
-      const lastPositions = lastLine.geometry.attributes.position.array;
+      if (lines.length > 0) {
+        const lastLine = lines[lines.length - 1];
+        const lastPositions = lastLine.geometry.attributes.position.array;
 
-      // Obtenez la matrice de transformation mondiale de la ligne
-      const matrix = lastLine.matrixWorld;
+        // Obtenez la matrice de transformation mondiale de la ligne
+        const matrix = lastLine.matrixWorld;
 
-      // Obtenez les coordonnées du deuxième point de la ligne dans le système local de la ligne
-      const secondPointLocal = new THREE.Vector3(lastPositions[3], lastPositions[4], lastPositions[5]);  // Remplacez les valeurs par les coordonnées réelles du deuxième point
-      // Par exemple, si le deuxième point est à (x, y, z), vous feriez :
-      // const secondPointLocal = new THREE.Vector3(x, y, z);
+        // Obtenez les coordonnées du deuxième point de la ligne dans le système local de la ligne
+        const secondPointLocal = new THREE.Vector3(lastPositions[3], lastPositions[4], lastPositions[5]);  // Remplacez les valeurs par les coordonnées réelles du deuxième point
+        // Par exemple, si le deuxième point est à (x, y, z), vous feriez :
+        // const secondPointLocal = new THREE.Vector3(x, y, z);
 
-      // Appliquez la matrice de transformation mondiale pour obtenir les coordonnées mondiales
-      const secondPointWorld = secondPointLocal.applyMatrix4(matrix);
+        // Appliquez la matrice de transformation mondiale pour obtenir les coordonnées mondiales
+        const secondPointWorld = secondPointLocal.applyMatrix4(matrix);
 
-      lastPositions[3] = secondPointWorld.x;
-      lastPositions[4] = secondPointWorld.y;
-      lastPositions[5] = secondPointWorld.z;
+        lastPositions[3] = secondPointWorld.x;
+        lastPositions[4] = secondPointWorld.y;
+        lastPositions[5] = secondPointWorld.z;
 
-      lastLine.geometry.attributes.position.needsUpdate = true;
+        lastLine.geometry.attributes.position.needsUpdate = true;
+      }
+
+      const lineGeometry = new THREE.BufferGeometry();
+      const linePositions = new Float32Array(6);
+      linePositions[0] = currentMouse.x;
+      linePositions[1] = currentMouse.y;
+      linePositions[2] = 0;
+      linePositions[3] = currentMouse.x;
+      linePositions[4] = currentMouse.y;
+      linePositions[5] = 0;
+      lineGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+
+      const line = new THREE.Line(lineGeometry, lineMaterial);
+      scene.add(line);
+      lines.push(line);
+
+      if (lines.length > 5000) {
+        const firstLine = lines.shift();
+        scene.remove(firstLine);
+      }
     }
-
-    const lineGeometry = new THREE.BufferGeometry();
-    const linePositions = new Float32Array(6);
-    linePositions[0] = currentMouse.x;
-    linePositions[1] = currentMouse.y;
-    linePositions[2] = 0;
-    linePositions[3] = currentMouse.x;
-    linePositions[4] = currentMouse.y;
-    linePositions[5] = 0;
-    lineGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
-
-    const line = new THREE.Line(lineGeometry, lineMaterial);
-    scene.add(line);
-    lines.push(line);
-
-    if (lines.length > 10000) {
-      const firstLine = lines.shift();
-      scene.remove(firstLine);
-    }
-
   }, 10);
 
   //AddFilmGrain();
@@ -141,9 +135,17 @@ if (WebGL.isWebGLAvailable()) {
   const animate = () => {
     requestAnimationFrame(animate);
 
-    lines.forEach((line) => {
-      line.rotation.y += 0.005;
-    });
+
+    if (nextPageBool) {
+      lines.forEach((line) => {
+        line.position.add(new THREE.Vector3(0, -0.005, 0));
+      });
+    }
+    else {
+      lines.forEach((line) => {
+        line.rotation.y += 0.005;
+      });
+    }
 
     renderer.render(scene, camera);
 
@@ -159,6 +161,14 @@ if (WebGL.isWebGLAvailable()) {
 
   window.addEventListener('resize', onResize);
 
+  function nextPage() {
+    console.log("next page");
+    nextPageBool = true;
+  }
+
+  document.getElementById("next-page").addEventListener("click", nextPage, false);
+
+
 } else {
 
   const warning = WebGL.getWebGLErrorMessage();
@@ -166,7 +176,3 @@ if (WebGL.isWebGLAvailable()) {
 
 }
 
-
-function NextPage() {
-
-}

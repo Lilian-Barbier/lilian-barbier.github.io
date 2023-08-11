@@ -40,6 +40,10 @@ body {
     color: white;
 }
 
+#next-page {
+    color: white;
+}
+
 @keyframes show {
     from {
         width: 0
