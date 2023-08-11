@@ -1,0 +1,59 @@
+#title {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    z-index: 100;
+    display: block;
+    color: white;
+}
+
+body {
+    margin: 0;
+}
+
+.wrapper {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    z-index: 100;
+    display: block;
+}
+
+.grid-wrapper {
+    height: 100vh;
+    /*This part is important for centering*/
+    display: grid;
+    place-items: center;
+}
+
+.typing-demo {
+    width: 14ch;
+    animation: typing 2s steps(14), blink .5s step-end infinite alternate;
+    animation-delay: 2s;
+
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 3px solid;
+    font-family: monospace;
+    font-size: 2em;
+    color: white;
+}
+
+@keyframes show {
+    from {
+        width: 0
+    }
+}
+
+@keyframes typing {
+    from {
+        width: 0
+    }
+}
+
+@keyframes blink {
+    50% {
+        border-color: transparent
+    }
+}

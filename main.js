@@ -1,5 +1,54 @@
 import * as THREE from 'three';
 import WebGL from 'three/addons/capabilities/WebGL.js';
+import { ImprovedNoise } from 'https://unpkg.com/three/examples/jsm/math/ImprovedNoise.js';
+
+function AddFilmGrain() {
+
+
+  // Chargement d'une texture pour le bruit
+  const noiseTexture = new THREE.TextureLoader().load('path_to_noise_texture.png');
+  noiseTexture.wrapS = THREE.RepeatWrapping;
+  noiseTexture.wrapT = THREE.RepeatWrapping;
+
+  // Création d'un shader pour le filtre de grain
+  const grainFilterShader = {
+    uniforms: {
+      tDiffuse: { value: null },
+      tNoise: { value: noiseTexture },
+      grainAmount: { value: 0.05 } // Ajustez cela pour contrôler l'intensité du grain
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform sampler2D tNoise;
+        uniform float grainAmount;
+        varying vec2 vUv;
+        void main() {
+            vec4 color = texture2D(tDiffuse, vUv);
+            vec4 noise = texture2D(tNoise, vUv * 100.0);
+            color.rgb += noise.rgb * grainAmount;
+            gl_FragColor = color;
+        }
+    `
+  };
+
+
+  // Création du matériau avec le shader
+  const grainFilterMaterial = new THREE.ShaderMaterial(grainFilterShader);
+
+  // Création du quadrilatère pour appliquer le filtre
+  const planeGeometry = new THREE.Plane();
+  const planeMesh = new THREE.Mesh(planeGeometry, grainFilterMaterial);
+  scene.add(planeMesh);
+
+}
+
 
 if (WebGL.isWebGLAvailable()) {
 
@@ -19,6 +68,10 @@ if (WebGL.isWebGLAvailable()) {
   const renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
+
+  // //Create composer for post-processing
+  // const composer = new EffectComposer(renderer);
+
 
   // Create a material for the line
   const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
@@ -80,15 +133,21 @@ if (WebGL.isWebGLAvailable()) {
 
   }, 10);
 
+  //AddFilmGrain();
+  let val = new ImprovedNoise().noise(5);
+
+
   // Render loop
   const animate = () => {
     requestAnimationFrame(animate);
 
     lines.forEach((line) => {
-      line.rotation.y += 0.007;
+      line.rotation.y += 0.005;
     });
 
     renderer.render(scene, camera);
+
+    //composer.render();
   };
   animate();
 
@@ -104,5 +163,10 @@ if (WebGL.isWebGLAvailable()) {
 
   const warning = WebGL.getWebGLErrorMessage();
   document.getElementById('container').appendChild(warning);
+
+}
+
+
+function NextPage() {
 
 }
